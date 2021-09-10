@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+
+{% block body %}
+
+    <div class="container">
+        <h1 class="text-center my-5">Se connecter:</h1>
+
+        <form method="POST" class="w-50 mx-auto">
+
+            <label for="username" class="form-label">Username</label>
+            <input name="_username" type="text" class="form-control" id="username">
+
+            <label for="password" class="form-label">Password</label>
+            <input name="_password" type="password" class="form-control" id="password">
+
+
+            <input type="submit" value="Submit" class="btn btn-primary">
+
+        </form>
+
+    </div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}Hello AuthController!{% endblock %}
+
+{% block body %}
+    {{ form_start(form) }}
+
+    {{form_row(form.username)}}
+    {{form_row(form.email)}}
+    {{form_row(form.password)}}
+    {{form_row(form.passwordConfirm)}}
+    {{form_row(form.firstName)}}
+    {{form_row(form.lastName)}}
+    {{form_row(form.nbPhone)}}
+    {{form_row(form.nbSiret)}}
+
+
+    <button type="submit" class="btn btn-primary">
+        S'incrire
+    </button>
+    {{ form_end(form) }}
+{% endblock %}
