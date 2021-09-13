@@ -36,8 +36,6 @@ class GarageController extends AbstractController
 
 
 
-
-
             return $this->json($garages, 200, [], [
                 "groups" => ["garage"]
             ]);

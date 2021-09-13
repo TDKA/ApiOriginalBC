@@ -59,6 +59,7 @@ class UserController extends AbstractController
 
     ///////////// SHOW ONE USER ///////////////// OK
 
+    // FOR ADMIN
     /**
      *
      * @Route("/show/user/{id}", name="show_user_by_id", methods={"GET"})
@@ -96,6 +97,46 @@ class UserController extends AbstractController
         }
     }
 
+    //For user pro
+    /**
+     *
+     * @Route("/user/show", name="show_user", methods={"GET"})
+     * 
+     */
+    public function showUserPro(User $user = null, UserInterface $currentUser): Response
+    {
+        if (!$user) {
+            $user = $currentUser;
+        }
+
+
+        $isAdmin = in_array("ROLE_ADMIN", $currentUser->getRoles());
+        $data = ["user_index" => "SOO SORRY, YOU DON'T HAVE PERMISSION FOR THAT"];
+
+        //A USER HAS ACCESS TO THEIR OWN DATA, AS WEL AS AN ADMIN.
+        if ($currentUser->getUserIdentifier() || $isAdmin) {
+            $data = ["user_index" => $user];
+
+            //if varified
+            return $this->json(
+                $data,
+                200,
+                [],
+                [
+                    "groups" => [
+                        "user"
+                    ]
+                ]
+            );
+        } else {
+            //if no permissions
+            return $this->json(
+                $data,
+                200
+            );
+        }
+    }
+
 
     /////////////////////// FIND ALL USERS ///////////////////// OK
     /**
@@ -126,7 +167,7 @@ class UserController extends AbstractController
      * 
      * @Route("/edit/{id}", name="edit_user",methods={"PUT"} )
      */
-    public function edit(User $user, Request $req, SerializerInterface $serializer, EntityManagerInterface $emi, UserInterface $currentUser): Response
+    public function edit(User $user, Request $req, SerializerInterface $serializer, EntityManagerInterface $emi, UserInterface $currentUser, UserPasswordHasherInterface $hasher): Response
     {
         $isAdmin = in_array("ROLE_ADMIN", $currentUser->getRoles());
         //Admin + User
@@ -135,13 +176,18 @@ class UserController extends AbstractController
             $jsonUser = $req->getContent();
             $userObj = $serializer->deserialize($jsonUser, User::class, 'json');
 
+            $hashedPassword = $hasher->hashPassword($user, $user->getPassword());
+            $user->setPassword($hashedPassword);
 
             $user->setUsername($userObj->getUsername());
             $user->setEmail($userObj->getEmail());
             $user->setFirstname($userObj->getFirstname());
             $user->setLastname($userObj->getLastname());
             $user->setNbPhone($userObj->getNbPhone());
+
+            //test
             $user->setNbSiret($userObj->getNbSiret());
+
 
             //only an 
             if (!$isAdmin) {

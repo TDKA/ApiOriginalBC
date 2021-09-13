@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Annonce;
+use App\Entity\Brand;
 use App\Repository\UserRepository;
 use App\Repository\BrandRepository;
 use App\Repository\GarageRepository;
@@ -98,70 +99,7 @@ class AnnonceController extends AbstractController
 
     ///// ADDDD 
 
-    // /**
-    //  * create new car ad / announce
-    //  * @Route("/annonce/add/{garage_id}", name="new_ad", methods={"POST"})
-    //  * 
-    //  */
-    // public function new(
-    //     GarageRepository $gRepo,
-    //     $garage_id,
-    //     Request $req,
-    //     SerializerInterface $serializer,
-    //     EntityManagerInterface $emi,
-    //     UserInterface $currentUser,
-    //     ModeleRepository $modeleRepository,
-    //     BrandRepository $brandRepo,
-    //     SluggerInterface $slugger
-    // ): Response {
-    //     // ONLY AN OWNER CAN REGISTER A NEW CAR AD
-    //     $isAdmin = in_array("ROLE_ADMIN", $currentUser->getRoles());
 
-    //     if (in_array("ROLE_USER ", $currentUser->getRoles()) || $isAdmin) {
-
-    //         $data = ["Car_Ad_New" => "That garage doesn't exist"];
-    //         $garage = $gRepo->find($garage_id);
-
-    //         if ($garage->getUser() == $currentUser || $isAdmin) {
-
-    //             $annonceJson = $req->getContent();
-
-    //             $annonce = $serializer->deserialize($annonceJson, Annonce::class, 'json');
-
-    //             $date = new \DateTime();
-    //             $annonce->setCreatedAt($date);
-
-    //             $modele = $modeleRepository->findOneBy(["name" => $req->toArray('modele')]);
-    //             $annonce->setModele($modele);
-
-    //             $brand = $brandRepo->findOneBy(["name" => $req->toArray('brand')]);
-
-    //             $annonce->setBrand($brand);
-    //             $annonce->setUser($currentUser);
-    //             $annonce->setGarage($garage);
-    //             $emi->persist($annonce);
-    //             $emi->flush();
-
-    //             $data = ["message" => $annonce];
-    //         }
-    //         return $this->json(
-    //             $data,
-    //             200,
-    //             [],
-    //             [
-    //                 "groups" => [
-    //                     "annonce"
-    //                 ]
-    //             ]
-    //         );
-    //     } else {
-    //         $data = ["Pas de  permission !"];
-    //         return $this->json(
-    //             $data,
-    //             200
-    //         );
-    //     }
-    //}
 
     /**
      * @Route("/annonce/add/", name="add_annonce", methods={"POST"})
@@ -172,38 +110,80 @@ class AnnonceController extends AbstractController
         EntityManagerInterface $emi,
         UserRepository $userRepo,
         GarageRepository $garageRepo,
-
+        UserInterface $currentUser,
         BrandRepository $brandRepo,
         ModeleRepository $modelRepo
     ): Response {
+
         if (!$this->getUser()) {
-            return $this->json(["Désolé vous n avez pas acces a cette information !", 200, []]);
+            return $this->json(["Permission", 200, []]);
         }
         $isAdmin = in_array("ROLE_ADMIN", $this->getUser()->getRoles(), true);
-        if ($isAdmin && $this->getUser()) {
-            $classifiedAdJson = $req->getContent();
-            $classifiedAd = $serializer->deserialize($classifiedAdJson, ClassifiedAd::class, 'json');
+
+
+        if ($isAdmin || $this->getUser()) {
+            $annonceJson = $req->getContent();
+            $annonce = $serializer->deserialize($annonceJson, Annonce::class, 'json');
+
             $brand = $brandRepo->findOneBy(["id" => $req->toArray('brand')]);
             $modele = $modelRepo->findOneBy(["id" => $req->toArray('modele')]);
-
             $garage = $garageRepo->findOneBy(["id" => $req->toArray('garage')]);
-            $user = $userRepo->findOneBy(["id" => $req->toArray('user')]);
-            $classifiedAd->setBrand($brand);
-            $classifiedAd->setModel($modele);
+            // $user = $userRepo->findOneBy(["id" => $req->toArray('user')]);
+            $user = $this->getUser();
+            $annonce->setUser($user);
 
-            $classifiedAd->setUser($user);
-            $classifiedAd->setGarage($garage);
-            $classifiedAd->setCreatedAt(new \DateTime());
+            $annonce->setBrand($brand);
+            $annonce->setModele($modele);
+            $annonce->setGarage($garage);
+            $annonce->setCreatedAt(new \DateTime());
 
-            $emi->persist($classifiedAd);
+            $emi->persist($annonce);
             $emi->flush();
-            return $this->json(["message" => "Votre annonce à bien été ajoutée !"], 200, []);
+            return $this->json(["message" => "Voila, votre annonce a été ajoutée !"], 200, []);
         }
-        return $this->json(["message" => "Il semblerait qu 'il y a un un petit probleme merci de recommencer votre saisie"], 200, []);
+        return $this->json(["message" => "Ops, il y a un problem !"], 200, []);
     }
 
 
 
+    /**
+     * @Route("/annonce/edit/{id}", name="edit_annonce", methods={"PUT"})
+     */
+    public function edit(
+        Request $req,
+        SerializerInterface $serializer,
+        EntityManagerInterface $emi,
+        UserRepository $userRepo,
+        GarageRepository $garageRepo,
+        BrandRepository $brandRepo,
+        ModeleRepository $modeleRepo
+    ) { {
+            if (!$this->getUser()) {
+                return $this->json(["Désolé vous n avez pas acces a cette information !", 200, []]);
+            }
+            $isAdmin = in_array("ROLE_ADMIN", $this->getUser()->getRoles(), true);
+            if ($isAdmin || $this->getUser()) {
+                $annonceJson = $req->getContent();
+                $annonce = $serializer->deserialize($annonceJson, Annonce::class, 'json');
 
-    ///// EDIT
+                $brand = $brandRepo->findOneBy(["id" => $req->toArray('brand')]);
+                $modele = $modeleRepo->findOneBy(["id" => $req->toArray('modele')]);
+                $garage = $garageRepo->findOneBy(["id" => $req->toArray('garage')]);
+                $user = $userRepo->findOneBy(["id" => $req->toArray('user')]);
+                // $user = $this->getUser();
+                // $annonce->setUser($user);
+                $annonce->setCreatedAt(new \DateTime());
+                $annonce->setBrand($brand);
+                $annonce->setModele($modele);
+
+                $annonce->setUser($user);
+                $annonce->setGarage($garage);
+
+                $emi->persist($annonce);
+                $emi->flush();
+                return $this->json(["message" => "Votre annonce à bien été ajoutée !"], 200, []);
+            }
+            return $this->json(["message" => "Il semblerait qu 'il y a un un petit probleme merci de recommencer votre saisie"], 200, []);
+        }
+    }
 }
