@@ -9,6 +9,7 @@ use App\Repository\BrandRepository;
 use App\Repository\GarageRepository;
 use App\Repository\ModeleRepository;
 use App\Repository\AnnonceRepository;
+use Doctrine\Common\Annotations\Annotation\Required;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,6 +18,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /**
  *
@@ -122,12 +124,14 @@ class AnnonceController extends AbstractController
 
 
         if ($isAdmin || $this->getUser()) {
+
             $annonceJson = $req->getContent();
             $annonce = $serializer->deserialize($annonceJson, Annonce::class, 'json');
 
             $brand = $brandRepo->findOneBy(["id" => $req->toArray('brand')]);
             $modele = $modelRepo->findOneBy(["id" => $req->toArray('modele')]);
             $garage = $garageRepo->findOneBy(["id" => $req->toArray('garage')]);
+
             // $user = $userRepo->findOneBy(["id" => $req->toArray('user')]);
             $user = $this->getUser();
             $annonce->setUser($user);
@@ -139,7 +143,7 @@ class AnnonceController extends AbstractController
 
             $emi->persist($annonce);
             $emi->flush();
-            return $this->json(["message" => "Voila, votre annonce a été ajoutée !"], 200, []);
+            return $this->json(["message" => "Vous avez modifié l'annonce !"], 200, []);
         }
         return $this->json(["message" => "Ops, il y a un problem !"], 200, []);
     }
@@ -156,34 +160,45 @@ class AnnonceController extends AbstractController
         UserRepository $userRepo,
         GarageRepository $garageRepo,
         BrandRepository $brandRepo,
-        ModeleRepository $modeleRepo
+        ModeleRepository $modeleRepo,
+        Annonce $annonce
     ) { {
             if (!$this->getUser()) {
                 return $this->json(["Désolé vous n avez pas acces a cette information !", 200, []]);
             }
             $isAdmin = in_array("ROLE_ADMIN", $this->getUser()->getRoles(), true);
             if ($isAdmin || $this->getUser()) {
+
                 $annonceJson = $req->getContent();
-                $annonce = $serializer->deserialize($annonceJson, Annonce::class, 'json');
+                $annonceObj = $serializer->deserialize($annonceJson, Annonce::class, 'json');
+
+                $annonce->setTitle($annonceObj->getTitle());
+                $annonce->setDescription($annonceObj->getDescription());
+                $annonce->setReference($annonceObj->getReference());
+                $annonce->setPrice($annonceObj->getPrice());
+                $annonce->setKm($annonceObj->getKm());
+                $annonce->setFuel($annonceObj->getFuel());
+                $annonce->setYear($annonceObj->getYear());
+                $annonce->setCreatedAt(new \DateTime());
+
 
                 $brand = $brandRepo->findOneBy(["id" => $req->toArray('brand')]);
                 $modele = $modeleRepo->findOneBy(["id" => $req->toArray('modele')]);
                 $garage = $garageRepo->findOneBy(["id" => $req->toArray('garage')]);
-                $user = $userRepo->findOneBy(["id" => $req->toArray('user')]);
-                // $user = $this->getUser();
-                // $annonce->setUser($user);
-                $annonce->setCreatedAt(new \DateTime());
+                // $user = $userRepo->findOneBy(["id" => $req->toArray('user')]);
+                $user = $this->getUser();
+                $annonce->setUser($user);
+
+
                 $annonce->setBrand($brand);
                 $annonce->setModele($modele);
-
-                $annonce->setUser($user);
                 $annonce->setGarage($garage);
 
                 $emi->persist($annonce);
                 $emi->flush();
-                return $this->json(["message" => "Votre annonce à bien été ajoutée !"], 200, []);
+                return $this->json(["message" => "Modification réussi !"], 200, []);
             }
-            return $this->json(["message" => "Il semblerait qu 'il y a un un petit probleme merci de recommencer votre saisie"], 200, []);
+            return $this->json(["message" => "Il y a un problem là !"], 200, []);
         }
     }
 }

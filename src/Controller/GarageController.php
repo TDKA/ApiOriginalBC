@@ -137,8 +137,10 @@ class GarageController extends AbstractController
         $isAdmin = in_array("ROLE_ADMIN", $currentUser->getRoles());
         if ($garage->getUser()->getId() || $isAdmin) {
             $garage = $repo->findOneBy(["id" => $id]);
-            $garageEdit = $request->getContent();
-            $garageEdit = $serializer->deserialize($garageEdit, Garage::class, 'json');
+
+            $garageJson = $request->getContent();
+
+            $garageEdit = $serializer->deserialize($garageJson, Garage::class, 'json');
             $garage->setName($garageEdit->getName());
             $garage->setAddresse($garageEdit->getAddresse());
             $garage->setNbPhone($garageEdit->getNbPhone());
